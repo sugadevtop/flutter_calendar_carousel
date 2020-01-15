@@ -116,6 +116,7 @@ class CalendarCarousel<T extends EventInterface> extends StatefulWidget {
   final int firstDayOfWeek;
   final DateTime minSelectedDate;
   final DateTime maxSelectedDate;
+  final List<DateTime> selectableDates;
   final TextStyle inactiveDaysTextStyle;
   final TextStyle inactiveWeekendTextStyle;
   final bool headerTitleTouchable;
@@ -206,6 +207,7 @@ class CalendarCarousel<T extends EventInterface> extends StatefulWidget {
     this.dayMainAxisAlignment = MainAxisAlignment.center,
     this.showIconBehindDayText = false,
     this.pageScrollPhysics = const ScrollPhysics(),
+    this.selectableDates
   });
 
   @override
@@ -233,6 +235,7 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
   int _pageNum = 0;
   DateTime minDate;
   DateTime maxDate;
+  List<DateTime> selectableDates;
 
   /// When FIRSTDAYOFWEEK is 0 in dart-intl, it represents Monday. However it is the second day in the arrays of Weekdays.
   /// Therefore we need to add 1 modulo 7 to pick the right weekday from intl. (cf. [GlobalMaterialLocalizations])
@@ -244,6 +247,10 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
   initState() {
     super.initState();
     initializeDateFormatting();
+    selectableDates = widget.selectableDates;
+    if(selectableDates == null) {
+      selectableDates = List<DateTime>();
+    }
 
     minDate = widget.minSelectedDate ?? DateTime(2018);
     maxDate = widget.maxSelectedDate ?? DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day);
@@ -621,6 +628,10 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
                       now.millisecondsSinceEpoch >
                           maxDate.millisecondsSinceEpoch)
                     isSelectable = false;
+
+                  if(selectableDates.isNotEmpty && selectableDates.where((item) => item.millisecondsSinceEpoch == now.millisecondsSinceEpoch).toList().isEmpty) {
+                    isSelectable = false;
+                  }
                   return renderDay(isSelectable, index, isSelectedDay, isToday, isPrevMonthDay, textStyle, defaultTextStyle, isNextMonthDay, isThisMonthDay, now);
                 }),
               ),
@@ -772,6 +783,10 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
     if (maxDate != null &&
         picked.millisecondsSinceEpoch >
             maxDate.millisecondsSinceEpoch) return;
+
+    if(selectableDates.isNotEmpty && selectableDates.where((item) => item.millisecondsSinceEpoch == picked.millisecondsSinceEpoch).toList().isEmpty) {
+      return;
+    }
 
     setState(() {
       _selectedDate = picked;
